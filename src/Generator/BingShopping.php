@@ -22,7 +22,6 @@ use Plenty\Modules\Order\Currency\Contracts\CurrencyRepositoryContract;
 use Plenty\Modules\Order\Currency\Models\Currency;
 use Plenty\Plugin\Log\Loggable;
 use ElasticExportBingShopping\Helper\ImageHelper;
-use DateTime;
 
 /**
  * Class BingShopping
@@ -298,10 +297,7 @@ class BingShopping extends CSVPluginGenerator
             $salePrice = $variationPrice;
             $variationPrice = $this->elasticExportPriceHelper->convertPrice($rrpPrice['price'], $this->priceDetectionService->getCurrency(), $settings, 2, '.');
             $variationPrice = $variationPrice . ' ' . $this->priceDetectionService->getCurrency();
-
-            $datetime = pluginApp(DateTime::class);
-            $datetime->modify('+7 day');
-            $dateDayAfterTomorrow = $datetime->format(DateTime::ATOM);
+            $dateDayAfterTomorrow = date("Y-m-d\TH:i:sP", strtotime('+7 days'));
 
         } else {
             $salePrice = '';
