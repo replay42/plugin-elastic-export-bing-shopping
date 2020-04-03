@@ -16,7 +16,7 @@ use Plenty\Modules\Cloud\ElasticSearch\Lib\ElasticSearch;
 
 class BingShopping extends ResultFields
 {
-    const GOOGLE_SHOPPING = 7.00;
+    const BING_SHOPPING = 17.00;
 
     /*
      * @var ArrayHelper
@@ -25,7 +25,7 @@ class BingShopping extends ResultFields
 
     /**
      * GoogleShopping constructor.
-	 *
+     *
      * @param ArrayHelper $arrayHelper
      */
     public function __construct(ArrayHelper $arrayHelper)
@@ -35,7 +35,7 @@ class BingShopping extends ResultFields
 
     /**
      * Generate result fields.
-	 *
+     *
      * @param  array $formatSettings = []
      * @return array
      */
@@ -43,80 +43,73 @@ class BingShopping extends ResultFields
     {
         $settings = $this->arrayHelper->buildMapFromObjectList($formatSettings, 'key', 'value');
         $reference = $settings->get('referrerId') ? $settings->get('referrerId') : self::GOOGLE_SHOPPING;
-		$this->setOrderByList([
-			'path' => 'item.id',
-			'order' => ElasticSearch::SORTING_ORDER_ASC]);
+        $this->setOrderByList([
+            'path' => 'item.id',
+            'order' => ElasticSearch::SORTING_ORDER_ASC]);
 
         $list = ['texts.urlPath', 'texts.lang'];
 
         $list[] = ($settings->get('nameId')) ? 'texts.name' . $settings->get('nameId') : 'texts.name1';
 
         if ($settings->get('descriptionType') == 'itemShortDescription' ||
-            $settings->get('previewTextType') == 'itemShortDescription')
-        {
+            $settings->get('previewTextType') == 'itemShortDescription') {
             $list[] = 'texts.shortDescription';
         }
 
         if ($settings->get('descriptionType') == 'itemDescription' ||
             $settings->get('descriptionType') == 'itemDescriptionAndTechnicalData' ||
             $settings->get('previewTextType') == 'itemDescription' ||
-            $settings->get('previewTextType') == 'itemDescriptionAndTechnicalData')
-        {
+            $settings->get('previewTextType') == 'itemDescriptionAndTechnicalData') {
             $list[] = 'texts.description';
         }
 
         if ($settings->get('descriptionType') == 'technicalData' ||
             $settings->get('descriptionType') == 'itemDescriptionAndTechnicalData' ||
             $settings->get('previewTextType') == 'technicalData' ||
-            $settings->get('previewTextType') == 'itemDescriptionAndTechnicalData')
-        {
+            $settings->get('previewTextType') == 'itemDescriptionAndTechnicalData') {
             $list[] = 'texts.technicalData';
         }
 
 
         //Mutator
-		/**
-		 * @var BarcodeMutator $barcodeMutator
-		 */
-		$barcodeMutator = pluginApp(BarcodeMutator::class);
-		if($barcodeMutator instanceof BarcodeMutator)
-		{
-			$barcodeMutator->addMarket($reference);
-		}
+        /**
+         * @var BarcodeMutator $barcodeMutator
+         */
+        $barcodeMutator = pluginApp(BarcodeMutator::class);
+        if ($barcodeMutator instanceof BarcodeMutator) {
+            $barcodeMutator->addMarket($reference);
+        }
 
-		/**
-		 * @var KeyMutator
-		 */
-		$keyMutator = pluginApp(KeyMutator::class);
+        /**
+         * @var KeyMutator
+         */
+        $keyMutator = pluginApp(KeyMutator::class);
 
-		if($keyMutator instanceof KeyMutator)
-		{
-			$keyMutator->setKeyList($this->getKeyList());
-			$keyMutator->setNestedKeyList($this->getNestedKeyList());
-		}
+        if ($keyMutator instanceof KeyMutator) {
+            $keyMutator->setKeyList($this->getKeyList());
+            $keyMutator->setNestedKeyList($this->getNestedKeyList());
+        }
 
         /**
          * @var ImageMutator $imageMutator
          */
         $imageMutator = pluginApp(ImageMutator::class);
 
-        if($imageMutator instanceof ImageMutator)
-        {
+        if ($imageMutator instanceof ImageMutator) {
             $imageMutator->addMarket($reference);
         }
 
         /**
          * @var LanguageMutator $languageMutator
          */
-		$languageMutator = pluginApp(LanguageMutator::class, ['languages' => [$settings->get('lang')]]);
+        $languageMutator = pluginApp(LanguageMutator::class, ['languages' => [$settings->get('lang')]]);
 
         /**
          * @var SkuMutator $skuMutator
          */
         $skuMutator = pluginApp(SkuMutator::class);
 
-        if($skuMutator instanceof SkuMutator)
-        {
+        if ($skuMutator instanceof SkuMutator) {
             $skuMutator->setMarket($reference);
         }
 
@@ -125,35 +118,33 @@ class BingShopping extends ResultFields
          */
         $defaultCategoryMutator = pluginApp(DefaultCategoryMutator::class);
 
-        if($defaultCategoryMutator instanceof DefaultCategoryMutator)
-        {
+        if ($defaultCategoryMutator instanceof DefaultCategoryMutator) {
             $defaultCategoryMutator->setPlentyId($settings->get('plentyId'));
         }
 
-		/**
-		 * @var ImageDomainMutator $imageDomainMutator
-		 */
+        /**
+         * @var ImageDomainMutator $imageDomainMutator
+         */
         $imageDomainMutator = pluginApp(ImageDomainMutator::class);
 
-        if($imageDomainMutator instanceof ImageDomainMutator)
-        {
-        	$imageDomainMutator->setClient($settings->get('plentyId'));
-		}
+        if ($imageDomainMutator instanceof ImageDomainMutator) {
+            $imageDomainMutator->setClient($settings->get('plentyId'));
+        }
 
         $fields = [
             [
                 // Item
                 'item.id',
                 'item.manufacturer.id',
-				'item.manufacturer.name',
-				'item.manufacturer.externalName',
+                'item.manufacturer.name',
+                'item.manufacturer.externalName',
                 'item.conditionApi',
 
                 // Variation
                 'id',
                 'variation.availability.id',
                 'variation.model',
-				'variation.releasedAt',
+                'variation.releasedAt',
                 'variation.stockLimitation',
                 'variation.weightG',
 
@@ -202,9 +193,9 @@ class BingShopping extends ResultFields
                 'properties.property.id',
                 'properties.property.valueType',
                 'properties.selection.name',
-				'properties.selection.lang',
-				'properties.texts.value',
-				'properties.texts.lang',
+                'properties.selection.lang',
+                'properties.texts.value',
+                'properties.texts.lang',
                 'properties.valueInt',
                 'properties.valueFloat',
             ],
@@ -212,21 +203,18 @@ class BingShopping extends ResultFields
                 $languageMutator,
                 $skuMutator,
                 $defaultCategoryMutator,
-				$barcodeMutator,
-				$imageDomainMutator,
-				$keyMutator,
+                $barcodeMutator,
+                $imageDomainMutator,
+                $keyMutator,
             ],
         ];
 
-        if($reference != -1)
-        {
+        if ($reference != -1) {
             $fields[1][] = $imageMutator;
         }
 
-        if (is_array($list) && count($list) > 0)
-        {
-            foreach($list as $element)
-            {
+        if (is_array($list) && count($list) > 0) {
+            foreach ($list as $element) {
                 $fields[0][] = $element;
             }
         }
@@ -234,68 +222,68 @@ class BingShopping extends ResultFields
         return $fields;
     }
 
-	/**
-	 * @return array
-	 */
+    /**
+     * @return array
+     */
     private function getKeyList()
-	{
-		return [
-			// Item
-			'item.id',
-			'item.manufacturer.id',
-			'item.conditionApi',
+    {
+        return [
+            // Item
+            'item.id',
+            'item.manufacturer.id',
+            'item.conditionApi',
 
-			// Variation
-			'variation.availability.id',
-			'variation.model',
-			'variation.releasedAt',
-			'variation.stockLimitation',
-			'variation.weightG',
+            // Variation
+            'variation.availability.id',
+            'variation.model',
+            'variation.releasedAt',
+            'variation.stockLimitation',
+            'variation.weightG',
 
-			// Unit
-			'unit.content',
-			'unit.id',
-		];
-	}
+            // Unit
+            'unit.content',
+            'unit.id',
+        ];
+    }
 
-	/**
-	 * @return array
-	 */
-	private function getNestedKeyList()
-	{
-		return [
-			'keys' => [
-				// Attributes
-				'attributes',
+    /**
+     * @return array
+     */
+    private function getNestedKeyList()
+    {
+        return [
+            'keys' => [
+                // Attributes
+                'attributes',
 
                 // Properties
                 'properties',
 
-				// Barcodes
-				'barcodes',
+                // Barcodes
+                'barcodes',
 
-				// Default categories
-				'defaultCategories',
+                // Default categories
+                'defaultCategories',
 
-				// Images
-				'images.all',
-				'images.item',
-				'images.variation',
+                // Images
+                'images.all',
+                'images.item',
+                'images.variation',
 
-				// Sku
-				'skus',
+                // Sku
+                'skus',
 
                 // Texts
                 'texts',
-			],
+            ],
 
-			'nestedKeys' => [
-				// Attributes
-				'attributes' => [
-					'attributeValueSetId',
-					'attributeId',
-					'valueId',
-				],
+            'nestedKeys' => [
+                // Attributes
+                'attributes' => [
+                    'attributeValueSetId',
+                    'attributeId',
+                    'valueId',
+                ],
 
                 // Proprieties
                 'properties' => [
@@ -309,59 +297,59 @@ class BingShopping extends ResultFields
                     'valueFloat',
                 ],
 
-				// Barcodes
-				'barcodes' => [
-					'code',
-					'type',
-				],
+                // Barcodes
+                'barcodes' => [
+                    'code',
+                    'type',
+                ],
 
-				// Default categories
-				'defaultCategories' => [
-					'id',
-				],
+                // Default categories
+                'defaultCategories' => [
+                    'id',
+                ],
 
-				// Images
-				'images.all' => [
-					'urlMiddle',
-					'urlPreview',
-					'urlSecondPreview',
-					'url',
-					'path',
-					'position',
-				],
-				'images.item' => [
-					'urlMiddle',
-					'urlPreview',
-					'urlSecondPreview',
-					'url',
-					'path',
-					'position',
-				],
-				'images.variation' => [
-					'urlMiddle',
-					'urlPreview',
-					'urlSecondPreview',
-					'url',
-					'path',
-					'position',
-				],
+                // Images
+                'images.all' => [
+                    'urlMiddle',
+                    'urlPreview',
+                    'urlSecondPreview',
+                    'url',
+                    'path',
+                    'position',
+                ],
+                'images.item' => [
+                    'urlMiddle',
+                    'urlPreview',
+                    'urlSecondPreview',
+                    'url',
+                    'path',
+                    'position',
+                ],
+                'images.variation' => [
+                    'urlMiddle',
+                    'urlPreview',
+                    'urlSecondPreview',
+                    'url',
+                    'path',
+                    'position',
+                ],
 
-				// Sku
-				'skus' => [
-					'sku',
-				],
+                // Sku
+                'skus' => [
+                    'sku',
+                ],
 
-				// Texts
-				'texts' => [
-					'urlPath',
-					'name1',
-					'name2',
-					'name3',
-					'shortDescription',
-					'description',
-					'technicalData',
-				],
-			]
-		];
-	}
+                // Texts
+                'texts' => [
+                    'urlPath',
+                    'name1',
+                    'name2',
+                    'name3',
+                    'shortDescription',
+                    'description',
+                    'technicalData',
+                ],
+            ]
+        ];
+    }
 }

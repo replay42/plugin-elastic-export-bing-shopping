@@ -38,7 +38,7 @@ class BingShopping extends CSVPluginGenerator
     const CHARACTER_TYPE_SIZE_SYSTEM				= 'size_system';
     const CHARACTER_TYPE_ENERGY_EFFICIENCY_CLASS	= 'energy_efficiency_class';
     const CHARACTER_TYPE_EXCLUDED_DESTINATION		= 'excluded_destination';
-    const CHARACTER_TYPE_ADWORDS_REDIRECT			= 'adwords_redirect';
+    const CHARACTER_TYPE_ADS_REDIRECT			= 'ads_redirect';
     const CHARACTER_TYPE_MOBILE_LINK				= 'mobile_link';
     const CHARACTER_TYPE_SALE_PRICE_EFFECTIVE_DATE	= 'sale_price_effective_date';
     const CHARACTER_TYPE_CUSTOM_LABEL_0				= 'custom_label_0';
@@ -55,7 +55,7 @@ class BingShopping extends CSVPluginGenerator
     const ISO_CODE_2								= 'isoCode2';
     const ISO_CODE_3								= 'isoCode3';
 
-    const BING_SHOPPING                           = 17.00;
+    const BING_SHOPPING             = 17.00;
 
     /**
      * @var ElasticExportCoreHelper $elasticExportHelper
@@ -78,54 +78,54 @@ class BingShopping extends CSVPluginGenerator
     private $priceHelper;
 
     /**
-	 * @var ElasticExportStockHelper $elasticExportStockHelper
-	 */
-	private $elasticExportStockHelper;
+     * @var ElasticExportStockHelper $elasticExportStockHelper
+     */
+    private $elasticExportStockHelper;
 
-	/**
-	 * @var ElasticExportPriceHelper $elasticExportPriceHelper
-	 */
-	private $elasticExportPriceHelper;
+    /**
+     * @var ElasticExportPriceHelper $elasticExportPriceHelper
+     */
+    private $elasticExportPriceHelper;
 
-	/**
-	 * @var ElasticExportItemHelper $elasticExportItemHelper
-	 */
-	private $elasticExportItemHelper;
+    /**
+     * @var ElasticExportItemHelper $elasticExportItemHelper
+     */
+    private $elasticExportItemHelper;
 
-	/**
-	 * @var ElasticExportPropertyHelper $elasticExportPropertyHelper
-	 */
-	private $elasticExportPropertyHelper;
+    /**
+     * @var ElasticExportPropertyHelper $elasticExportPropertyHelper
+     */
+    private $elasticExportPropertyHelper;
 
-	/**
-	 * @var ImageHelper $imageHelper
-	 */
-	private $imageHelper;
+    /**
+     * @var ImageHelper $imageHelper
+     */
+    private $imageHelper;
 
-	/**
-	 * @var int
-	 */
-	private $errorIterator = 0;
+    /**
+     * @var int
+     */
+    private $errorIterator = 0;
 
-	/**
-	 * @var array
-	 */
-	private $errorBatch = [];
+    /**
+     * @var array
+     */
+    private $errorBatch = [];
 
     /**
      * @var FiltrationService
      */
-	private $filtrationService;
+    private $filtrationService;
 
     /**
      * @var VariationExportServiceContract
      */
-	private $variationExportService;
+    private $variationExportService;
 
-	/**
+    /**
      * @var PriceDetectionService
      */
-	private $priceDetectionService;
+    private $priceDetectionService;
 
     /**
      * BingShopping constructor.
@@ -140,16 +140,15 @@ class BingShopping extends CSVPluginGenerator
         ArrayHelper $arrayHelper,
         AttributeHelper $attributeHelper,
         PriceHelper $priceHelper,
-		ImageHelper $imageHelper,
+        ImageHelper $imageHelper,
         VariationExportServiceContract $variationExportService
-	)
-    {
+    ) {
         $this->arrayHelper = $arrayHelper;
         $this->attributeHelper = $attributeHelper;
         $this->priceHelper = $priceHelper;
-		$this->imageHelper = $imageHelper;
-		$this->variationExportService = $variationExportService;
-	}
+        $this->imageHelper = $imageHelper;
+        $this->variationExportService = $variationExportService;
+    }
 
     /**
      * @param VariationElasticSearchScrollRepositoryContract $elasticSearch
@@ -158,57 +157,52 @@ class BingShopping extends CSVPluginGenerator
      */
     protected function generatePluginContent($elasticSearch, array $formatSettings = [], array $filter = [])
     {
-    	$this->elasticExportPriceHelper = pluginApp(ElasticExportPriceHelper::class);
-		$this->elasticExportStockHelper = pluginApp(ElasticExportStockHelper::class);
+        $this->elasticExportPriceHelper = pluginApp(ElasticExportPriceHelper::class);
+        $this->elasticExportStockHelper = pluginApp(ElasticExportStockHelper::class);
         $this->elasticExportHelper = pluginApp(ElasticExportCoreHelper::class);
-		$this->elasticExportItemHelper = pluginApp(ElasticExportItemHelper::class);
-		$this->elasticExportPropertyHelper = pluginApp(ElasticExportPropertyHelper::class);
-		$this->priceDetectionService = pluginApp(PriceDetectionService::class);
+        $this->elasticExportItemHelper = pluginApp(ElasticExportItemHelper::class);
+        $this->elasticExportPropertyHelper = pluginApp(ElasticExportPropertyHelper::class);
+        $this->priceDetectionService = pluginApp(PriceDetectionService::class);
 
-		$this->attributeHelper->setPropertyHelper();
+        $this->attributeHelper->setPropertyHelper();
 
         $settings = $this->arrayHelper->buildMapFromObjectList($formatSettings, 'key', 'value');
-		$this->filtrationService = pluginApp(FiltrationService::class, ['settings' => $settings, 'filterSettings' => $filter]);
+        $this->filtrationService = pluginApp(FiltrationService::class, ['settings' => $settings, 'filterSettings' => $filter]);
 
         $this->setDelimiter("	"); // this is tab character!
 
-		$shardIterator = 0;
+        $shardIterator = 0;
 
-		// preload prices for comparison of the IDs of the list and a variation bulk
+        // preload prices for comparison of the IDs of the list and a variation bulk
         $this->priceDetectionService->preload($settings);
 
         $this->attributeHelper->loadLinkedAttributeList($settings);
 
         $this->addCSVContent($this->getHeader());
 
-        if($elasticSearch instanceof VariationElasticSearchScrollRepositoryContract)
-        {
-        	$elasticSearch->setNumberOfDocumentsPerShard(250);
+        if ($elasticSearch instanceof VariationElasticSearchScrollRepositoryContract) {
+            $elasticSearch->setNumberOfDocumentsPerShard(250);
 
             $limitReached = false;
             $lines = 0;
-            do
-            {
-                if($limitReached === true)
-                {
+            do {
+                if ($limitReached === true) {
                     break;
                 }
 
                 // execute and get page
                 $resultList = $elasticSearch->execute();
-				$shardIterator++;
+                $shardIterator++;
 
-				if(count($resultList['error']) > 0)
-				{
-					$this->getLogger(__METHOD__)
+                if (count($resultList['error']) > 0) {
+                    $this->getLogger(__METHOD__)
                         ->addReference('failedShard', $shardIterator)
                         ->error('ElasticExportBingShopping::log.esError', [
                             'Error message' => $resultList['error'],
                         ]);
-				}
+                }
 
-				if($shardIterator == 1)
-				{
+                if ($shardIterator == 1) {
                     $this->getLogger(__METHOD__)
                         ->addReference('total', (int)$resultList['total'])
                         ->debug('ElasticExportBingShopping::logs.esResultAmount');
@@ -221,7 +215,7 @@ class BingShopping extends CSVPluginGenerator
 
                 // collection variation IDs
                 $preloadObjects = [];
-                foreach ($resultList['documents'] AS $variation) {
+                foreach ($resultList['documents'] as $variation) {
                     $preloadObjects[] = pluginApp(ExportPreloadValue::class, [
                         (int)$variation['data']['item']['id'],
                         (int)$variation['id']
@@ -231,57 +225,48 @@ class BingShopping extends CSVPluginGenerator
                 // execute and preload
                 $this->variationExportService->preload($preloadObjects);
 
-                foreach($resultList['documents'] as $variation)
-                {
-                    if($lines == $filter['limit'])
-                    {
+                foreach ($resultList['documents'] as $variation) {
+                    if ($lines == $filter['limit']) {
                         $limitReached = true;
                         break;
                     }
 
-                    if(is_array($resultList['documents']) && count($resultList['documents']) > 0)
-                    {
-                        if($this->filtrationService->filter($variation))
-                        {
+                    if (is_array($resultList['documents']) && count($resultList['documents']) > 0) {
+                        if ($this->filtrationService->filter($variation)) {
                             continue;
                         }
 
-                        try
-                        {
+                        try {
                             $this->buildRow($variation, $settings);
-                        }
-                        catch(\Throwable $throwable)
-                        {
-                        	$this->errorBatch['rowError'][] = [
-								'Error message ' => $throwable->getMessage(),
-								'Error line'    => $throwable->getLine(),
-								'VariationId'   => $variation['id']
-							];
+                        } catch (\Throwable $throwable) {
+                            $this->errorBatch['rowError'][] = [
+                                'Error message ' => $throwable->getMessage(),
+                                'Error line'    => $throwable->getLine(),
+                                'VariationId'   => $variation['id']
+                            ];
 
-                        	$this->errorIterator++;
+                            $this->errorIterator++;
 
-                        	if($this->errorIterator == 100)
-                        	{
-								$this->getLogger(__METHOD__)->error('ElasticExportBingShopping::logs.fillRowError', [
-									'error list'	=> $this->errorBatch['rowError']
-								]);
+                            if ($this->errorIterator == 100) {
+                                $this->getLogger(__METHOD__)->error('ElasticExportBingShopping::logs.fillRowError', [
+                                    'error list'	=> $this->errorBatch['rowError']
+                                ]);
 
-								$this->errorIterator = 0;
-							}
+                                $this->errorIterator = 0;
+                            }
                         }
                         $lines = $lines +1;
                     }
                 }
-            }while ($elasticSearch->hasNext());
+            } while ($elasticSearch->hasNext());
 
-			if(is_array($this->errorBatch) && count($this->errorBatch['rowError']))
-			{
-				$this->getLogger(__METHOD__)->error('ElasticExportBingShopping::logs.fillRowError', [
-					'errorList'	=> $this->errorBatch['rowError']
-				]);
+            if (is_array($this->errorBatch) && count($this->errorBatch['rowError'])) {
+                $this->getLogger(__METHOD__)->error('ElasticExportBingShopping::logs.fillRowError', [
+                    'errorList'	=> $this->errorBatch['rowError']
+                ]);
 
-				$this->errorIterator = 0;
-			}
+                $this->errorIterator = 0;
+            }
         }
     }
 
@@ -297,44 +282,47 @@ class BingShopping extends CSVPluginGenerator
 
         $salesPriceData = $this->priceDetectionService->getPriceByPreloadList($preloadedPrices, PriceDetectionService::SALES_PRICE);
 
-        if($salesPriceData['price'] > 0) {
-        	$variationPrice = $this->elasticExportPriceHelper->convertPrice($salesPriceData['price'], $this->priceDetectionService->getCurrency(), $settings, 2, '.');
+        if ($salesPriceData['price'] > 0) {
+            $variationPricePlain = $salesPriceData['price'];
+            $variationPrice = $this->elasticExportPriceHelper->convertPrice($salesPriceData['price'], $this->priceDetectionService->getCurrency(), $settings, 2, '.');
             $variationPrice = $variationPrice . ' ' . $this->priceDetectionService->getCurrency();
         } else {
+            $variationPricePlain = 0;
             $variationPrice = '';
         }
 
-        $specialPriceData = $this->priceDetectionService->getPriceByPreloadList($preloadedPrices, PriceDetectionService::SPECIAL_PRICE);
+        $rrpPrice = $this->priceDetectionService->getPriceByPreloadList($preloadedPrices, PriceDetectionService::RRP);
+        if ($rrpPrice['price'] > 0 && $variationPricePlain > 0 && $rrpPrice['price'] > $variationPricePlain) {
 
-        if($specialPriceData['price'] > 0) {
-			$salePrice = $this->elasticExportPriceHelper->convertPrice($specialPriceData['price'], $this->priceDetectionService->getCurrency(), $settings, 2, '.');
+            $salePrice = $variationPrice;
+            $variationPrice = $this->elasticExportPriceHelper->convertPrice($rrpPrice['price'], $this->priceDetectionService->getCurrency(), $settings, 2, '.');
+            $variationPrice = $variationPrice . ' ' . $this->priceDetectionService->getCurrency();
+
+            $datetime = new DateTime('now');
+            $datetime->modify('+7 day');
+            $dateDayAfterTomorrow = $datetime->format(DateTime::ATOM);
+
         } else {
             $salePrice = '';
+            $dateDayAfterTomorrow = '';
         }
 
         // FIXME non save condition handling
-        if($salePrice >= $variationPrice || $salePrice <= 0.00)
-        {
-        	$salePrice = '';
-		}
+        if ($salePrice >= $variationPrice || $salePrice <= 0.00) {
+            $salePrice = '';
+        }
 
         $shippingCost = $this->elasticExportHelper->getShippingCost($variation['data']['item']['id'], $settings);
 
-        if(!is_null($shippingCost))
-        {
+        if (!is_null($shippingCost)) {
             $shippingCost = number_format((float)$shippingCost, 2, '.', '').' '. $this->priceDetectionService->getCurrency();
-        }
-        else
-        {
+        } else {
             $shippingCost = '';
         }
 
-        if(strlen($shippingCost) == 0)
-        {
+        if (strlen($shippingCost) == 0) {
             $shipping = '';
-        }
-        else
-        {
+        } else {
             $shipping = $this->elasticExportHelper->getCountry($settings, self::ISO_CODE_2).':::'.$shippingCost;
         }
 
@@ -347,11 +335,11 @@ class BingShopping extends CSVPluginGenerator
             'id' 						=> $this->elasticExportHelper->generateSku($variation['id'], self::BING_SHOPPING, 0, $variation['data']['skus']['sku']),
             'title' 					=> $this->elasticExportHelper->getMutatedName($variation, $settings, 256),
             'description'				=> $this->getDescription($variation, $settings),
-            'Bing_product_category'	=> $this->elasticExportHelper->getCategoryMarketplace((int)$variation['data']['defaultCategories'][0]['id'], (int)$settings->get('plentyId'), 129),
+            'product_category'	=> $this->elasticExportHelper->getCategoryMarketplace((int)$variation['data']['defaultCategories'][0]['id'], (int)$settings->get('plentyId'), 129),
             'product_type'				=> $this->elasticExportHelper->getCategory((int)$variation['data']['defaultCategories'][0]['id'], (string)$settings->get('lang'), (int)$settings->get('plentyId')),
             'link'						=> $this->elasticExportHelper->getMutatedUrl($variation, $settings, true, false),
             'image_link'				=> $images[ImageHelper::MAIN_IMAGE],
-			'additional_image_link'		=> $images[ImageHelper::ADDITIONAL_IMAGES],
+            'additional_image_link'		=> $images[ImageHelper::ADDITIONAL_IMAGES],
             'condition'					=> $this->getCondition($variation['data']['item']['conditionApi']['id']),
             'availability'				=> $this->elasticExportHelper->getAvailability($variation, $settings, false),
             'price'						=> $variationPrice,
@@ -370,7 +358,7 @@ class BingShopping extends CSVPluginGenerator
             'gender'					=> $this->elasticExportPropertyHelper->getProperty($variation, self::CHARACTER_TYPE_GENDER, self::BING_SHOPPING, $settings->get('lang')),
             'age_group'					=> $this->elasticExportPropertyHelper->getProperty($variation, self::CHARACTER_TYPE_AGE_GROUP, self::BING_SHOPPING, $settings->get('lang')),
             'excluded_destination'		=> $this->elasticExportPropertyHelper->getProperty($variation, self::CHARACTER_TYPE_EXCLUDED_DESTINATION, self::BING_SHOPPING, $settings->get('lang')),
-            'adwords_redirect'			=> $this->elasticExportPropertyHelper->getProperty($variation, self::CHARACTER_TYPE_ADWORDS_REDIRECT, self::BING_SHOPPING, $settings->get('lang')),
+            'ads_redirect'			=> $this->elasticExportPropertyHelper->getProperty($variation, self::CHARACTER_TYPE_ADS_REDIRECT, self::BING_SHOPPING, $settings->get('lang')),
             'identifier_exists'			=> $this->getIdentifierExists($variation, $settings),
             'unit_pricing_measure'		=> $basePriceComponents['unit_pricing_measure'],
             'unit_pricing_base_measure'	=> $basePriceComponents['unit_pricing_base_measure'],
@@ -378,14 +366,14 @@ class BingShopping extends CSVPluginGenerator
             'size_system'				=> $this->elasticExportPropertyHelper->getProperty($variation, self::CHARACTER_TYPE_SIZE_SYSTEM, self::BING_SHOPPING, $settings->get('lang')),
             'size_type'					=> $this->elasticExportPropertyHelper->getProperty($variation, self::CHARACTER_TYPE_SIZE_TYPE, self::BING_SHOPPING, $settings->get('lang')),
             'mobile_link'				=> $this->elasticExportPropertyHelper->getProperty($variation, self::CHARACTER_TYPE_MOBILE_LINK, self::BING_SHOPPING, $settings->get('lang')),
-            'sale_price_effective_date'	=> $this->elasticExportPropertyHelper->getProperty($variation, self::CHARACTER_TYPE_SALE_PRICE_EFFECTIVE_DATE, self::BING_SHOPPING, $settings->get('lang')),
+            'sale_price_effective_date'	=> $dateDayAfterTomorrow,
             'adult'						=> '',
             'custom_label_0'			=> $this->elasticExportPropertyHelper->getProperty($variation, self::CHARACTER_TYPE_CUSTOM_LABEL_0, self::BING_SHOPPING, $settings->get('lang')),
             'custom_label_1'			=> $this->elasticExportPropertyHelper->getProperty($variation, self::CHARACTER_TYPE_CUSTOM_LABEL_1, self::BING_SHOPPING, $settings->get('lang')),
             'custom_label_2'			=> $this->elasticExportPropertyHelper->getProperty($variation, self::CHARACTER_TYPE_CUSTOM_LABEL_2, self::BING_SHOPPING, $settings->get('lang')),
             'custom_label_3'			=> $this->elasticExportPropertyHelper->getProperty($variation, self::CHARACTER_TYPE_CUSTOM_LABEL_3, self::BING_SHOPPING, $settings->get('lang')),
             'custom_label_4'			=> $this->elasticExportPropertyHelper->getProperty($variation, self::CHARACTER_TYPE_CUSTOM_LABEL_4, self::BING_SHOPPING, $settings->get('lang')),
-			'availability_​date'			=> $this->elasticExportHelper->getReleaseDate($variation),
+            'availability_​date'			=> $this->elasticExportHelper->getReleaseDate($variation),
         ];
 
         $this->addCSVContent(array_values($data));
@@ -393,7 +381,7 @@ class BingShopping extends CSVPluginGenerator
 
     /**
      * Check if condition is valid.
-	 *
+     *
      * @param int|null $conditionId
      * @return string
      */
@@ -408,19 +396,16 @@ class BingShopping extends CSVPluginGenerator
             5 => 'refurbished'
         ];
 
-        if (!is_null($conditionId) && array_key_exists($conditionId, $conditionList))
-        {
+        if (!is_null($conditionId) && array_key_exists($conditionId, $conditionList)) {
             return $conditionList[$conditionId];
-        }
-        else
-        {
+        } else {
             return '';
         }
     }
 
     /**
      * Calculate and get unit price.
-	 *
+     *
      * @param array $variation
      * @return string
      */
@@ -428,46 +413,39 @@ class BingShopping extends CSVPluginGenerator
     {
         $count = 0;
 
-        if(strlen($variation['data']['variation']['model']) > 0)
-        {
+        if (strlen($variation['data']['variation']['model']) > 0) {
             $count++;
         }
 
-        if(strlen($this->elasticExportHelper->getBarcodeByType($variation, $settings->get('barcode'))) > 0 ||
-				strlen($this->elasticExportHelper->getBarcodeByType($variation, ElasticExportCoreHelper::BARCODE_ISBN)) > 0 )
-        {
+        if (strlen($this->elasticExportHelper->getBarcodeByType($variation, $settings->get('barcode'))) > 0 ||
+                strlen($this->elasticExportHelper->getBarcodeByType($variation, ElasticExportCoreHelper::BARCODE_ISBN)) > 0) {
             $count++;
         }
 
-        if (strlen($this->elasticExportHelper->getExternalManufacturerName((int)$variation['data']['item']['manufacturer']['id'])) > 0)
-        {
+        if (strlen($this->elasticExportHelper->getExternalManufacturerName((int)$variation['data']['item']['manufacturer']['id'])) > 0) {
             $count++;
         }
 
-        if ($count >= 2)
-        {
+        if ($count >= 2) {
             return 'true';
-        }
-        else
-        {
+        } else {
             return 'false';
         }
     }
 
     /**
      * Returns the description of a variation. Priority has a "description" property. Is
-	 * no property linked, it will return the default description text.
-	 *
+     * no property linked, it will return the default description text.
+     *
      * @param array $variation
      * @param KeyValue $settings
      * @return string
      */
     private function getDescription($variation, KeyValue $settings):string
     {
-    	$description = $this->elasticExportPropertyHelper->getProperty($variation, self::CHARACTER_TYPE_DESCRIPTION, self::BING_SHOPPING, $settings->get('lang'));
+        $description = $this->elasticExportPropertyHelper->getProperty($variation, self::CHARACTER_TYPE_DESCRIPTION, self::BING_SHOPPING, $settings->get('lang'));
 
-        if (strlen($description) <= 0)
-        {
+        if (strlen($description) <= 0) {
             $description = $this->elasticExportHelper->getMutatedDescription($variation, $settings, 5000);
         }
 
@@ -483,7 +461,7 @@ class BingShopping extends CSVPluginGenerator
             'id',
             'title',
             'description',
-            'Bing_product_category',
+            'product_category',
             'product_type',
             'link',
             'image_link',
@@ -506,7 +484,7 @@ class BingShopping extends CSVPluginGenerator
             'gender',
             'age_group',
             'excluded_destination',
-            'adwords_redirect',
+            'ads_redirect',
             'identifier_exists',
             'unit_pricing_measure',
             'unit_pricing_base_measure',
