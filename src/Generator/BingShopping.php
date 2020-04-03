@@ -22,6 +22,7 @@ use Plenty\Modules\Order\Currency\Contracts\CurrencyRepositoryContract;
 use Plenty\Modules\Order\Currency\Models\Currency;
 use Plenty\Plugin\Log\Loggable;
 use ElasticExportBingShopping\Helper\ImageHelper;
+use DateTime;
 
 /**
  * Class BingShopping
