@@ -1,11 +1,11 @@
 <?php
 
-namespace ElasticExportGoogleShopping\Helper;
+namespace ElasticExportBingShopping\Helper;
 
 class UnitHelper
 {
     /**
-     * Returns the unit, if there is any unit configured, which is allowed for GoogleShopping.
+     * Returns the unit, if there is any unit configured, which is allowed for BingShopping.
      *
      * @param  int $unitId
      * @return string

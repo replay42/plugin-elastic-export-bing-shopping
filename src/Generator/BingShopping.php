@@ -1,6 +1,6 @@
 <?php
 
-namespace ElasticExportGoogleShopping\Generator;
+namespace ElasticExportBingShopping\Generator;
 
 use ElasticExport\Helper\ElasticExportItemHelper;
 use ElasticExport\Helper\ElasticExportPriceHelper;
@@ -8,8 +8,8 @@ use ElasticExport\Helper\ElasticExportPropertyHelper;
 use ElasticExport\Helper\ElasticExportStockHelper;
 use ElasticExport\Services\FiltrationService;
 use ElasticExport\Services\PriceDetectionService;
-use ElasticExportGoogleShopping\Helper\AttributeHelper;
-use ElasticExportGoogleShopping\Helper\PriceHelper;
+use ElasticExportBingShopping\Helper\AttributeHelper;
+use ElasticExportBingShopping\Helper\PriceHelper;
 use Plenty\Legacy\Services\Item\Variation\DetectSalesPriceService;
 use Plenty\Modules\DataExchange\Contracts\CSVPluginGenerator;
 use Plenty\Modules\Helper\Services\ArrayHelper;
@@ -21,14 +21,14 @@ use Plenty\Modules\Item\Variation\Services\ExportPreloadValue\ExportPreloadValue
 use Plenty\Modules\Order\Currency\Contracts\CurrencyRepositoryContract;
 use Plenty\Modules\Order\Currency\Models\Currency;
 use Plenty\Plugin\Log\Loggable;
-use ElasticExportGoogleShopping\Helper\ImageHelper;
+use ElasticExportBingShopping\Helper\ImageHelper;
 
 /**
- * Class GoogleShopping
+ * Class BingShopping
  *
- * @package ElasticExportGoogleShopping\Generator
+ * @package ElasticExportBingShopping\Generator
  */
-class GoogleShopping extends CSVPluginGenerator
+class BingShopping extends CSVPluginGenerator
 {
     use Loggable;
 
@@ -55,7 +55,7 @@ class GoogleShopping extends CSVPluginGenerator
     const ISO_CODE_2								= 'isoCode2';
     const ISO_CODE_3								= 'isoCode3';
 
-    const GOOGLE_SHOPPING                           = 7.00;
+    const BING_SHOPPING                           = 17.00;
 
     /**
      * @var ElasticExportCoreHelper $elasticExportHelper
@@ -96,7 +96,7 @@ class GoogleShopping extends CSVPluginGenerator
 	 * @var ElasticExportPropertyHelper $elasticExportPropertyHelper
 	 */
 	private $elasticExportPropertyHelper;
-	
+
 	/**
 	 * @var ImageHelper $imageHelper
 	 */
@@ -121,14 +121,14 @@ class GoogleShopping extends CSVPluginGenerator
      * @var VariationExportServiceContract
      */
 	private $variationExportService;
-	
-	/** 
-     * @var PriceDetectionService 
+
+	/**
+     * @var PriceDetectionService
      */
 	private $priceDetectionService;
 
     /**
-     * GoogleShopping constructor.
+     * BingShopping constructor.
      *
      * @param ArrayHelper $arrayHelper
      * @param AttributeHelper $attributeHelper
@@ -166,14 +166,14 @@ class GoogleShopping extends CSVPluginGenerator
 		$this->priceDetectionService = pluginApp(PriceDetectionService::class);
 
 		$this->attributeHelper->setPropertyHelper();
-		
+
         $settings = $this->arrayHelper->buildMapFromObjectList($formatSettings, 'key', 'value');
 		$this->filtrationService = pluginApp(FiltrationService::class, ['settings' => $settings, 'filterSettings' => $filter]);
-        
+
         $this->setDelimiter("	"); // this is tab character!
 
 		$shardIterator = 0;
-		
+
 		// preload prices for comparison of the IDs of the list and a variation bulk
         $this->priceDetectionService->preload($settings);
 
@@ -184,7 +184,7 @@ class GoogleShopping extends CSVPluginGenerator
         if($elasticSearch instanceof VariationElasticSearchScrollRepositoryContract)
         {
         	$elasticSearch->setNumberOfDocumentsPerShard(250);
-        	
+
             $limitReached = false;
             $lines = 0;
             do
@@ -202,7 +202,7 @@ class GoogleShopping extends CSVPluginGenerator
 				{
 					$this->getLogger(__METHOD__)
                         ->addReference('failedShard', $shardIterator)
-                        ->error('ElasticExportGoogleShopping::log.esError', [
+                        ->error('ElasticExportBingShopping::log.esError', [
                             'Error message' => $resultList['error'],
                         ]);
 				}
@@ -211,14 +211,14 @@ class GoogleShopping extends CSVPluginGenerator
 				{
                     $this->getLogger(__METHOD__)
                         ->addReference('total', (int)$resultList['total'])
-                        ->debug('ElasticExportGoogleShopping::logs.esResultAmount');
+                        ->debug('ElasticExportBingShopping::logs.esResultAmount');
                 }
-                
+
                 $this->variationExportService->addPreloadTypes([
 //                    'VariationStock',
                     'VariationSalesPrice'
                 ]);
-				
+
                 // collection variation IDs
                 $preloadObjects = [];
                 foreach ($resultList['documents'] AS $variation) {
@@ -256,27 +256,27 @@ class GoogleShopping extends CSVPluginGenerator
 								'Error message ' => $throwable->getMessage(),
 								'Error line'    => $throwable->getLine(),
 								'VariationId'   => $variation['id']
-							]; 
-                        	
+							];
+
                         	$this->errorIterator++;
-                        	
+
                         	if($this->errorIterator == 100)
                         	{
-								$this->getLogger(__METHOD__)->error('ElasticExportGoogleShopping::logs.fillRowError', [
+								$this->getLogger(__METHOD__)->error('ElasticExportBingShopping::logs.fillRowError', [
 									'error list'	=> $this->errorBatch['rowError']
 								]);
-								
+
 								$this->errorIterator = 0;
 							}
                         }
-                        $lines = $lines +1; 
+                        $lines = $lines +1;
                     }
                 }
             }while ($elasticSearch->hasNext());
 
 			if(is_array($this->errorBatch) && count($this->errorBatch['rowError']))
 			{
-				$this->getLogger(__METHOD__)->error('ElasticExportGoogleShopping::logs.fillRowError', [
+				$this->getLogger(__METHOD__)->error('ElasticExportBingShopping::logs.fillRowError', [
 					'errorList'	=> $this->errorBatch['rowError']
 				]);
 
@@ -294,9 +294,9 @@ class GoogleShopping extends CSVPluginGenerator
         $variationAttributes = $this->attributeHelper->getVariationAttributes($variation, $settings);
 
         $preloadedPrices = (array)$this->variationExportService->getData('VariationSalesPrice', $variation['id']);
-        
+
         $salesPriceData = $this->priceDetectionService->getPriceByPreloadList($preloadedPrices, PriceDetectionService::SALES_PRICE);
-        
+
         if($salesPriceData['price'] > 0) {
         	$variationPrice = $this->elasticExportPriceHelper->convertPrice($salesPriceData['price'], $this->priceDetectionService->getCurrency(), $settings, 2, '.');
             $variationPrice = $variationPrice . ' ' . $this->priceDetectionService->getCurrency();
@@ -305,13 +305,13 @@ class GoogleShopping extends CSVPluginGenerator
         }
 
         $specialPriceData = $this->priceDetectionService->getPriceByPreloadList($preloadedPrices, PriceDetectionService::SPECIAL_PRICE);
-        
+
         if($specialPriceData['price'] > 0) {
 			$salePrice = $this->elasticExportPriceHelper->convertPrice($specialPriceData['price'], $this->priceDetectionService->getCurrency(), $settings, 2, '.');
         } else {
             $salePrice = '';
         }
-            
+
         // FIXME non save condition handling
         if($salePrice >= $variationPrice || $salePrice <= 0.00)
         {
@@ -344,10 +344,10 @@ class GoogleShopping extends CSVPluginGenerator
         $images = $this->imageHelper->getImages($imageList);
 
         $data = [
-            'id' 						=> $this->elasticExportHelper->generateSku($variation['id'], self::GOOGLE_SHOPPING, 0, $variation['data']['skus']['sku']),
+            'id' 						=> $this->elasticExportHelper->generateSku($variation['id'], self::BING_SHOPPING, 0, $variation['data']['skus']['sku']),
             'title' 					=> $this->elasticExportHelper->getMutatedName($variation, $settings, 256),
             'description'				=> $this->getDescription($variation, $settings),
-            'google_product_category'	=> $this->elasticExportHelper->getCategoryMarketplace((int)$variation['data']['defaultCategories'][0]['id'], (int)$settings->get('plentyId'), 129),
+            'Bing_product_category'	=> $this->elasticExportHelper->getCategoryMarketplace((int)$variation['data']['defaultCategories'][0]['id'], (int)$settings->get('plentyId'), 129),
             'product_type'				=> $this->elasticExportHelper->getCategory((int)$variation['data']['defaultCategories'][0]['id'], (string)$settings->get('lang'), (int)$settings->get('plentyId')),
             'link'						=> $this->elasticExportHelper->getMutatedUrl($variation, $settings, true, false),
             'image_link'				=> $images[ImageHelper::MAIN_IMAGE],
@@ -367,24 +367,24 @@ class GoogleShopping extends CSVPluginGenerator
             'item_group_id'				=> $variation['data']['item']['id'],
             'shipping'					=> $shipping,
             'shipping_weight'			=> $variation['data']['variation']['weightG'].' g',
-            'gender'					=> $this->elasticExportPropertyHelper->getProperty($variation, self::CHARACTER_TYPE_GENDER, self::GOOGLE_SHOPPING, $settings->get('lang')),
-            'age_group'					=> $this->elasticExportPropertyHelper->getProperty($variation, self::CHARACTER_TYPE_AGE_GROUP, self::GOOGLE_SHOPPING, $settings->get('lang')),
-            'excluded_destination'		=> $this->elasticExportPropertyHelper->getProperty($variation, self::CHARACTER_TYPE_EXCLUDED_DESTINATION, self::GOOGLE_SHOPPING, $settings->get('lang')),
-            'adwords_redirect'			=> $this->elasticExportPropertyHelper->getProperty($variation, self::CHARACTER_TYPE_ADWORDS_REDIRECT, self::GOOGLE_SHOPPING, $settings->get('lang')),
+            'gender'					=> $this->elasticExportPropertyHelper->getProperty($variation, self::CHARACTER_TYPE_GENDER, self::BING_SHOPPING, $settings->get('lang')),
+            'age_group'					=> $this->elasticExportPropertyHelper->getProperty($variation, self::CHARACTER_TYPE_AGE_GROUP, self::BING_SHOPPING, $settings->get('lang')),
+            'excluded_destination'		=> $this->elasticExportPropertyHelper->getProperty($variation, self::CHARACTER_TYPE_EXCLUDED_DESTINATION, self::BING_SHOPPING, $settings->get('lang')),
+            'adwords_redirect'			=> $this->elasticExportPropertyHelper->getProperty($variation, self::CHARACTER_TYPE_ADWORDS_REDIRECT, self::BING_SHOPPING, $settings->get('lang')),
             'identifier_exists'			=> $this->getIdentifierExists($variation, $settings),
             'unit_pricing_measure'		=> $basePriceComponents['unit_pricing_measure'],
             'unit_pricing_base_measure'	=> $basePriceComponents['unit_pricing_base_measure'],
-            'energy_efficiency_class'	=> $this->elasticExportPropertyHelper->getProperty($variation, self::CHARACTER_TYPE_ENERGY_EFFICIENCY_CLASS, self::GOOGLE_SHOPPING, $settings->get('lang')),
-            'size_system'				=> $this->elasticExportPropertyHelper->getProperty($variation, self::CHARACTER_TYPE_SIZE_SYSTEM, self::GOOGLE_SHOPPING, $settings->get('lang')),
-            'size_type'					=> $this->elasticExportPropertyHelper->getProperty($variation, self::CHARACTER_TYPE_SIZE_TYPE, self::GOOGLE_SHOPPING, $settings->get('lang')),
-            'mobile_link'				=> $this->elasticExportPropertyHelper->getProperty($variation, self::CHARACTER_TYPE_MOBILE_LINK, self::GOOGLE_SHOPPING, $settings->get('lang')),
-            'sale_price_effective_date'	=> $this->elasticExportPropertyHelper->getProperty($variation, self::CHARACTER_TYPE_SALE_PRICE_EFFECTIVE_DATE, self::GOOGLE_SHOPPING, $settings->get('lang')),
+            'energy_efficiency_class'	=> $this->elasticExportPropertyHelper->getProperty($variation, self::CHARACTER_TYPE_ENERGY_EFFICIENCY_CLASS, self::BING_SHOPPING, $settings->get('lang')),
+            'size_system'				=> $this->elasticExportPropertyHelper->getProperty($variation, self::CHARACTER_TYPE_SIZE_SYSTEM, self::BING_SHOPPING, $settings->get('lang')),
+            'size_type'					=> $this->elasticExportPropertyHelper->getProperty($variation, self::CHARACTER_TYPE_SIZE_TYPE, self::BING_SHOPPING, $settings->get('lang')),
+            'mobile_link'				=> $this->elasticExportPropertyHelper->getProperty($variation, self::CHARACTER_TYPE_MOBILE_LINK, self::BING_SHOPPING, $settings->get('lang')),
+            'sale_price_effective_date'	=> $this->elasticExportPropertyHelper->getProperty($variation, self::CHARACTER_TYPE_SALE_PRICE_EFFECTIVE_DATE, self::BING_SHOPPING, $settings->get('lang')),
             'adult'						=> '',
-            'custom_label_0'			=> $this->elasticExportPropertyHelper->getProperty($variation, self::CHARACTER_TYPE_CUSTOM_LABEL_0, self::GOOGLE_SHOPPING, $settings->get('lang')),
-            'custom_label_1'			=> $this->elasticExportPropertyHelper->getProperty($variation, self::CHARACTER_TYPE_CUSTOM_LABEL_1, self::GOOGLE_SHOPPING, $settings->get('lang')),
-            'custom_label_2'			=> $this->elasticExportPropertyHelper->getProperty($variation, self::CHARACTER_TYPE_CUSTOM_LABEL_2, self::GOOGLE_SHOPPING, $settings->get('lang')),
-            'custom_label_3'			=> $this->elasticExportPropertyHelper->getProperty($variation, self::CHARACTER_TYPE_CUSTOM_LABEL_3, self::GOOGLE_SHOPPING, $settings->get('lang')),
-            'custom_label_4'			=> $this->elasticExportPropertyHelper->getProperty($variation, self::CHARACTER_TYPE_CUSTOM_LABEL_4, self::GOOGLE_SHOPPING, $settings->get('lang')),
+            'custom_label_0'			=> $this->elasticExportPropertyHelper->getProperty($variation, self::CHARACTER_TYPE_CUSTOM_LABEL_0, self::BING_SHOPPING, $settings->get('lang')),
+            'custom_label_1'			=> $this->elasticExportPropertyHelper->getProperty($variation, self::CHARACTER_TYPE_CUSTOM_LABEL_1, self::BING_SHOPPING, $settings->get('lang')),
+            'custom_label_2'			=> $this->elasticExportPropertyHelper->getProperty($variation, self::CHARACTER_TYPE_CUSTOM_LABEL_2, self::BING_SHOPPING, $settings->get('lang')),
+            'custom_label_3'			=> $this->elasticExportPropertyHelper->getProperty($variation, self::CHARACTER_TYPE_CUSTOM_LABEL_3, self::BING_SHOPPING, $settings->get('lang')),
+            'custom_label_4'			=> $this->elasticExportPropertyHelper->getProperty($variation, self::CHARACTER_TYPE_CUSTOM_LABEL_4, self::BING_SHOPPING, $settings->get('lang')),
 			'availability_​date'			=> $this->elasticExportHelper->getReleaseDate($variation),
         ];
 
@@ -464,7 +464,7 @@ class GoogleShopping extends CSVPluginGenerator
      */
     private function getDescription($variation, KeyValue $settings):string
     {
-    	$description = $this->elasticExportPropertyHelper->getProperty($variation, self::CHARACTER_TYPE_DESCRIPTION, self::GOOGLE_SHOPPING, $settings->get('lang'));
+    	$description = $this->elasticExportPropertyHelper->getProperty($variation, self::CHARACTER_TYPE_DESCRIPTION, self::BING_SHOPPING, $settings->get('lang'));
 
         if (strlen($description) <= 0)
         {
@@ -483,7 +483,7 @@ class GoogleShopping extends CSVPluginGenerator
             'id',
             'title',
             'description',
-            'google_product_category',
+            'Bing_product_category',
             'product_type',
             'link',
             'image_link',

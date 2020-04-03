@@ -1,9 +1,9 @@
 <?php
 
-namespace ElasticExportGoogleShopping\Helper;
+namespace ElasticExportBingShopping\Helper;
 
 use ElasticExport\Helper\ElasticExportPropertyHelper;
-use ElasticExportGoogleShopping\Generator\GoogleShopping;
+use ElasticExportBingShopping\Generator\BingShopping;
 use Plenty\Modules\Helper\Models\KeyValue;
 use Plenty\Modules\Item\Attribute\Contracts\AttributeRepositoryContract;
 use Plenty\Modules\Item\Attribute\Contracts\AttributeValueNameRepositoryContract;
@@ -61,12 +61,12 @@ class AttributeHelper
         $this->attributeValueRepositoryContract = $attributeValueRepositoryContract;
         $this->attributeValueNameRepositoryContract = $attributeValueNameRepositoryContract;
     }
-    
+
     public function setPropertyHelper()
 	{
 		$this->elasticExportPropertyHelper = pluginApp(ElasticExportPropertyHelper::class);
 	}
-    
+
     /**
      * Get variation attributes.
      *
@@ -101,7 +101,7 @@ class AttributeHelper
 
         foreach ($typeList as $type)
         {
-            $property = $this->elasticExportPropertyHelper->getProperty($variation, $type, GoogleShopping::GOOGLE_SHOPPING, $settings->get('lang'));
+            $property = $this->elasticExportPropertyHelper->getProperty($variation, $type, BingShopping::Bing_SHOPPING, $settings->get('lang'));
 
             if (strlen(trim($property)) > 0)
             {
@@ -121,7 +121,7 @@ class AttributeHelper
     }
 
     /**
-     * Get Google linked attribute list.
+     * Get Bing linked attribute list.
      *
      * @param KeyValue $settings
      */
@@ -164,9 +164,9 @@ class AttributeHelper
 
             if($attribute instanceof Attribute)
             {
-                if(strlen($attribute->googleShoppingAttribute) > 0)
+                if(strlen($attribute->BingShoppingAttribute) > 0)
                 {
-                    $this->linkedAttributeList[$attribute->id] = $attribute->googleShoppingAttribute;
+                    $this->linkedAttributeList[$attribute->id] = $attribute->BingShoppingAttribute;
 
                     $attributeValueList = $this->attributeValueRepositoryContract->findByAttributeId($attribute->id, $attributeValuePage);
                     if($attributeValueList instanceof PaginatedResult)
