@@ -17,5 +17,7 @@
   "categories": ["3880"],
   "author": "RbnSwr",
   "serviceProvider": "ElasticExportBingShopping\\ElasticExportBingShoppingServiceProvider",
-  "require": []
+  "require": [
+    "ElasticExport"
+  ]
 }
