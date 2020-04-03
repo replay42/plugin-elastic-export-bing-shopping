@@ -298,7 +298,7 @@ class BingShopping extends CSVPluginGenerator
             $variationPrice = $this->elasticExportPriceHelper->convertPrice($rrpPrice['price'], $this->priceDetectionService->getCurrency(), $settings, 2, '.');
             $variationPrice = $variationPrice . ' ' . $this->priceDetectionService->getCurrency();
 
-            $datetime = new DateTime('now');
+            $datetime = pluginApp(DateTime::class);
             $datetime->modify('+7 day');
             $dateDayAfterTomorrow = $datetime->format(DateTime::ATOM);
 
