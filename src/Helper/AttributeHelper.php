@@ -101,7 +101,7 @@ class AttributeHelper
 
         foreach ($typeList as $type)
         {
-            $property = $this->elasticExportPropertyHelper->getProperty($variation, $type, BingShopping::Bing_SHOPPING, $settings->get('lang'));
+            $property = $this->elasticExportPropertyHelper->getProperty($variation, $type, BingShopping::BING_SHOPPING, $settings->get('lang'));
 
             if (strlen(trim($property)) > 0)
             {
