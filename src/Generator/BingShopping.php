@@ -344,11 +344,11 @@ class BingShopping extends CSVPluginGenerator
             'brand'						=> $this->elasticExportItemHelper->getExternalManufacturerName($variation),
             'gtin'						=> $this->elasticExportHelper->getBarcodeByType($variation, $settings->get('barcode')),
             'isbn'						=> $this->elasticExportHelper->getBarcodeByType($variation, ElasticExportCoreHelper::BARCODE_ISBN),
-            'mpn'						=> $variation['data']['variation']['model'],
-            'color'						=> $variationAttributes[self::CHARACTER_TYPE_COLOR],
-            'size'						=> $variationAttributes[self::CHARACTER_TYPE_SIZE],
-            'material'					=> $variationAttributes[self::CHARACTER_TYPE_MATERIAL],
-            'pattern'					=> $variationAttributes[self::CHARACTER_TYPE_PATTERN],
+            'mpn'						   => $variation['data']['variation']['model'],
+            'color'						 => $this->prepareAttributeString($variationAttributes[self::CHARACTER_TYPE_COLOR]),
+            'size'						 => $this->prepareAttributeString($variationAttributes[self::CHARACTER_TYPE_SIZE]),
+            'material'				 => $this->prepareAttributeString($variationAttributes[self::CHARACTER_TYPE_MATERIAL]),
+            'pattern'					 => $this->prepareAttributeString($variationAttributes[self::CHARACTER_TYPE_PATTERN]),
             'item_group_id'				=> ($variation['data']['variation']['isMain'] ? "" : $variation['data']['item']['id']),
             'shipping'					=> $shipping,
             'shipping_weight'			=> $variation['data']['variation']['weightG'].' g',
@@ -374,6 +374,19 @@ class BingShopping extends CSVPluginGenerator
         ];
 
         $this->addCSVContent(array_values($data));
+    }
+
+
+    /**
+     * remove signs from attributes
+     *
+     * @param string $string
+     * @return string
+     */
+    private function prepareAttributeString($string):string
+    {
+      $string = str_replace(str_split('+-_'), ' ', $string);
+      return $string;
     }
 
     /**
