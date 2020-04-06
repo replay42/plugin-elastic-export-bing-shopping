@@ -15,7 +15,7 @@ use Plenty\Repositories\Models\PaginatedResult;
 class AttributeHelper
 {
     const CHARACTER_TYPE_COLOR						= 'color';
-    const CHARACTER_TYPE_SIZE						= 'size';
+    const CHARACTER_TYPE_SIZE						  = 'size';
     const CHARACTER_TYPE_PATTERN					= 'pattern';
     const CHARACTER_TYPE_MATERIAL					= 'material';
 
@@ -164,9 +164,9 @@ class AttributeHelper
 
             if($attribute instanceof Attribute)
             {
-                if(strlen($attribute->BingShoppingAttribute) > 0)
+                if(strlen($attribute->googleShoppingAttribute) > 0)
                 {
-                    $this->linkedAttributeList[$attribute->id] = $attribute->BingShoppingAttribute;
+                    $this->linkedAttributeList[$attribute->id] = $attribute->googleShoppingAttribute;
 
                     $attributeValueList = $this->attributeValueRepositoryContract->findByAttributeId($attribute->id, $attributeValuePage);
                     if($attributeValueList instanceof PaginatedResult)
