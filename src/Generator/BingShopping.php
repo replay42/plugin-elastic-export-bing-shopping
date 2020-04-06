@@ -349,7 +349,7 @@ class BingShopping extends CSVPluginGenerator
             'size'						=> $variationAttributes[self::CHARACTER_TYPE_SIZE],
             'material'					=> $variationAttributes[self::CHARACTER_TYPE_MATERIAL],
             'pattern'					=> $variationAttributes[self::CHARACTER_TYPE_PATTERN],
-            'item_group_id'				=> $variation['data']['item']['id'],
+            'item_group_id'				=> ($variation['data']['variation']['isMain'] ? "" : $variation['data']['item']['id']),
             'shipping'					=> $shipping,
             'shipping_weight'			=> $variation['data']['variation']['weightG'].' g',
             'gender'					=> $this->elasticExportPropertyHelper->getProperty($variation, self::CHARACTER_TYPE_GENDER, self::BING_SHOPPING, $settings->get('lang')),
