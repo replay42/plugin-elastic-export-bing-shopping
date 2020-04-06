@@ -147,6 +147,7 @@ class BingShopping extends ResultFields
                 'variation.releasedAt',
                 'variation.stockLimitation',
                 'variation.weightG',
+                'variation.isMain',
 
                 // Images
                 'images.all.urlMiddle',
@@ -239,6 +240,7 @@ class BingShopping extends ResultFields
             'variation.releasedAt',
             'variation.stockLimitation',
             'variation.weightG',
+            'variation.isMain',
 
             // Unit
             'unit.content',
